@@ -1,0 +1,34 @@
+#define macro MAIN() = takes (0) returns (0) {
+    // cheaper to call calldatasize twice than to dup the stack
+    calldatasize // [calldata_size]
+    calldatasize // [calldata_size, calldata_size]
+    // cheaper to `push0` than `0x00` since `0x00` translates to `push1 0`
+    push0        //  [0, calldata_size, calldata_size]
+    push0        //  [0, 0, calldata_size, calldata_size]
+
+    // copies calldata into memory offset at calldata_size
+    calldatacopy  // [calldata_size]
+
+    push0          // [0, calldata_size]
+    push0          // [0, 0, calldata_size]
+    create        // [address]
+
+    // we want to check if the address just created is 0
+    // and if so, have the value `1` or `true` stored on the stack
+    iszero      // [address == 0]
+    push0        // [0, address == 0]
+    eq          // [0 == (address == 0)]
+    0x01        // [1, eq]
+    // if the address was not 0, then this should be 1
+    and         // [1 & eq]
+
+    // store the info in memory
+    push0        // [0, 1 & eq]
+    mstore     // []
+
+    // return the info from memory
+    0x20    
+    push0
+    return
+    
+}
